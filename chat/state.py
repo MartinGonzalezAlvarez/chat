@@ -6,11 +6,9 @@ import uuid
 import httpx
 import reflex as rx
 
-
 class SettingsState(rx.State):
     color: str = "violet"
     font_family: str = "Poppins"
-
 
 class State(rx.State):
     question: str = ""
@@ -42,11 +40,16 @@ class State(rx.State):
         self.question = ""
         yield
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=30.0)) as client:
             input_payload = {
                 "prompt": sanitized_question,
                 "model": "mistral:7b",
-                "stream": True
+                "stream": True,
+                "options": {
+                    "temperature": 0.7,
+                    "top_p": 0.95,
+                    "top_k": 40
+                }
             }
 
             apiserver_url = os.environ.get("APISERVER_URL", "http://localhost:3335")
@@ -70,10 +73,12 @@ class State(rx.State):
                         full_response
                     )
 
-            except (httpx.RequestError, httpx.ConnectTimeout,
-                    httpx.ReadTimeout) as e:
+            except (httpx.RequestError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.HTTPStatusError) as e:
                 print(f"Error de comunicación: {e}")
                 self.chat_history[-1] = (self.chat_history[-1][0], "Error de comunicación.")
+            except asyncio.CancelledError:
+                print("La solicitud fue cancelada.")
+                self.chat_history[-1] = (self.chat_history[-1][0], "La solicitud fue cancelada.")
             finally:
                 self.processing = False
                 yield
@@ -85,3 +90,5 @@ class State(rx.State):
     def clear_chat(self):
         self.chat_history = []
         self.processing = False
+
+
