@@ -1,5 +1,5 @@
 import reflex as rx
-from chat.components.badge import made_with_reflex
+from chat.components.badge import made_with_mindjobs
 from chat.state import State
 
 
@@ -58,7 +58,7 @@ def action_bar() -> rx.Component:
     return rx.box(
         rx.box(
             rx.el.input(
-                placeholder="Ask anything",
+                placeholder="¿Tienes alguna Pregunta?",
                 on_blur=State.set_question,
                 id="input1",
                 class_name="box-border bg-slate-3 px-4 py-2 pr-14 rounded-full w-full outline-none focus:outline-accent-10 h-[48px] text-slate-12 placeholder:text-slate-9",
@@ -83,6 +83,6 @@ def action_bar() -> rx.Component:
             class_name="relative w-full",
         ),
         # Made with Reflex link
-        made_with_reflex(),
+        made_with_mindjobs(),
         class_name="flex flex-col justify-center items-center gap-6 w-full",
     )

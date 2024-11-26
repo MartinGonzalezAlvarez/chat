@@ -9,14 +9,14 @@ badge_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" vi
 """
 
 
-def made_with_reflex() -> rx.Component:
+def made_with_mindjobs() -> rx.Component:
     return rx.link(
         rx.html(badge_svg),
         rx.text(
-            "Built with Reflex",
+            "Creado por Minjobs",
             class_name="font-medium text-sm",
         ),
-        href="https://reflex.dev/",
+        href="https://https://mindjobs.cl//",
         is_external=True,
         color_scheme="violet",
         class_name="flex flex-row justify-center items-center gap-1.5 opacity-50 hover:opacity-100 w-full transition-opacity",

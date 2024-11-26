@@ -2,12 +2,15 @@ import asyncio
 import json
 import os
 import uuid
+
 import httpx
 import reflex as rx
+
 
 class SettingsState(rx.State):
     color: str = "violet"
     font_family: str = "Poppins"
+
 
 class State(rx.State):
     question: str = ""
@@ -26,12 +29,12 @@ class State(rx.State):
             return
 
         sanitized_question = self.sanitize_input(self.question)
-        
+
         self.processing = True
         yield
 
         self.chat_history.append((sanitized_question, ""))
-        
+
         # Truncar historial si es necesario
         if len(self.chat_history) > self.max_history_length:
             self.chat_history = self.chat_history[-self.max_history_length:]
@@ -42,7 +45,7 @@ class State(rx.State):
         async with httpx.AsyncClient() as client:
             input_payload = {
                 "prompt": sanitized_question,
-                "model": "mistral",
+                "model": "mistral:7b",
                 "stream": True
             }
 
@@ -56,28 +59,19 @@ class State(rx.State):
                 ) as response:
                     full_response = ""
                     async for chunk in response.aiter_text():
-                        try:
-                            # Intenta parsear como JSON
-                            json_chunk = json.loads(chunk)
-                            if isinstance(json_chunk, dict) and 'response' in json_chunk:
-                                fragment = json_chunk['response']
-                            else:
-                                fragment = chunk
-                        except json.JSONDecodeError:
-                            # Si no es JSON, usa el chunk directo
-                            fragment = chunk
+                        json_chunk = json.loads(chunk)  # Parsear como JSON
+                        fragment = json_chunk['response']  # Acceder al campo 'response'
+                        full_response += fragment  # Acumular la respuesta
+                        yield  # Actualizar la UI
 
-                        # Acumula el fragmento sin añadir espacios extra
-                        full_response += fragment
+                    # Actualizar el historial de chat al final del streaming
+                    self.chat_history[-1] = (
+                        self.chat_history[-1][0],
+                        full_response
+                    )
 
-                        # Actualiza el historial de chat
-                        self.chat_history[-1] = (
-                            self.chat_history[-1][0],
-                            full_response
-                        )
-                        yield
-
-            except httpx.RequestError as e:
+            except (httpx.RequestError, httpx.ConnectTimeout,
+                    httpx.ReadTimeout) as e:
                 print(f"Error de comunicación: {e}")
                 self.chat_history[-1] = (self.chat_history[-1][0], "Error de comunicación.")
             finally:
